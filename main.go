@@ -6,26 +6,15 @@ import (
     "log"
     "net/url"
     "os"
-
     "github.com/gocolly/colly/v2"
 )
 
 func main() {
-    // Membuat query Google Dorking
-    searchTerm := "CPNS pembukaan"
-    fileType := "pdf"
-    site := ".go.id"
+    searchTerm := "CPNS pembukaan filetype:pdf site:.go.id 2024"
+    searchURL := fmt.Sprintf("https://www.google.com/search?q=%s", url.QueryEscape(searchTerm))
 
-    // Menghasilkan query URL
-    dorkQuery := fmt.Sprintf("%s filetype:%s site:%s", url.QueryEscape(searchTerm), fileType, site)
-    searchURL := fmt.Sprintf("https://www.google.com/search?q=%s", dorkQuery)
-
-    fmt.Printf("Mencari: %s\n", searchURL)
-
-    // Membuat collector untuk scraping
     c := colly.NewCollector()
 
-    // Membuka file CSV untuk menulis
     file, err := os.Create("results.csv")
     if err != nil {
         log.Fatal(err)
@@ -35,18 +24,15 @@ func main() {
     writer := csv.NewWriter(file)
     defer writer.Flush()
 
-    // Menulis header ke file CSV
     err = writer.Write([]string{"Domain", "File PDF"})
     if err != nil {
         log.Fatal(err)
     }
 
-    // Event handler untuk scraping setiap hasil pencarian
     c.OnHTML("a", func(e *colly.HTMLElement) {
         link := e.Attr("href")
         if link != "" && len(e.Text) > 15 {
-            // Menulis baris ke file CSV
-            err := writer.Write([]string{e.Request.URL.Host, link})
+            err := writer.Write([]string{getDomain(link), link})
             if err != nil {
                 log.Fatal(err)
             }
@@ -54,14 +40,20 @@ func main() {
         }
     })
 
-    // Event handler untuk mengatasi masalah saat scraping
-    c.OnError(func(_ *colly.Response, err error) {
-        log.Println("Error:", err)
+    c.OnRequest(func(r *colly.Request) {
+        r.Headers.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
     })
 
-    // Memulai scraping
     err = c.Visit(searchURL)
     if err != nil {
         log.Fatal(err)
     }
+}
+
+func getDomain(link string) string {
+    parsedURL, err := url.Parse(link)
+    if err != nil {
+        return ""
+    }
+    return parsedURL.Host
 }
