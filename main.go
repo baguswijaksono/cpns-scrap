@@ -3,9 +3,13 @@ package main
 import (
     "encoding/csv"
     "fmt"
+    "io"
     "log"
+    "net/http"
     "net/url"
     "os"
+    "path/filepath"
+    "strings"
 
     "github.com/gocolly/colly/v2"
 )
@@ -14,6 +18,9 @@ func main() {
     searchTerm := "CPNS pembukaan filetype:pdf site:.go.id 2024"
     baseURL := "https://www.google.com/search?q=%s&start=%d"
     pages := 5 // Number of pages to scrape
+
+    downloadDir := "downloads" // Directory where PDFs will be saved
+    os.MkdirAll(downloadDir, os.ModePerm) // Create the download directory if it doesn't exist
 
     c := colly.NewCollector()
 
@@ -31,17 +38,19 @@ func main() {
         log.Fatal(err)
     }
 
-    // On finding anchor elements <a>
     c.OnHTML("a", func(e *colly.HTMLElement) {
         link := e.Attr("href")
-        if link != "" && len(e.Text) > 15 {
+        if link != "" && strings.Contains(link, ".pdf") {
             domain := getDomain(link)
             if domain != "" {
                 err := writer.Write([]string{domain, link})
                 if err != nil {
                     log.Fatal(err)
                 }
-                fmt.Printf("Ditemukan: %s\n%s\n\n", e.Text, link)
+                fmt.Printf("Ditemukan PDF: %s\n%s\n\n", e.Text, link)
+
+                // Download the PDF
+                downloadPDF(link, downloadDir)
             }
         }
     })
@@ -66,4 +75,45 @@ func getDomain(link string) string {
         return ""
     }
     return parsedURL.Host
+}
+
+// downloadPDF downloads the PDF file from the given URL and saves it to the specified directory
+func downloadPDF(fileURL, dir string) {
+    // Parse the file name from the URL
+    parsedURL, err := url.Parse(fileURL)
+    if err != nil {
+        fmt.Println("Failed to parse URL:", fileURL)
+        return
+    }
+
+    // Create a valid file name from the URL
+    fileName := filepath.Base(parsedURL.Path)
+    if !strings.HasSuffix(fileName, ".pdf") {
+        fileName += ".pdf"
+    }
+    filePath := filepath.Join(dir, fileName)
+
+    // Create the file
+    out, err := os.Create(filePath)
+    if err != nil {
+        fmt.Println("Failed to create file:", filePath)
+        return
+    }
+    defer out.Close()
+
+    // Download the PDF file
+    resp, err := http.Get(fileURL)
+    if err != nil {
+        fmt.Println("Failed to download file:", fileURL)
+        return
+    }
+    defer resp.Body.Close()
+
+    // Copy the content to the file
+    _, err = io.Copy(out, resp.Body)
+    if err != nil {
+        fmt.Println("Failed to save file:", filePath)
+    } else {
+        fmt.Println("File saved:", filePath)
+    }
 }
