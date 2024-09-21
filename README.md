@@ -8,25 +8,8 @@ This is a Go-based scraper for finding and downloading CPNS-related PDF files fr
 - Scrapes PDF files from `.go.id`, `.kab.go.id`, and `.prov.go.id` domains.
 - Optionally downloads the PDF files.
 - Saves the scraped data (domain and PDF link) in a `results.csv` file.
-- Customizable number of search result pages to scrape.
-  
-## Prerequisites
+- Customizable number of
 
-- Go installed on your machine
-- Internet access to perform the web scraping
-
-## Installation
-# CPNS Scraper - 2024
-
-This is a Go-based scraper for finding and downloading CPNS-related PDF files from government websites. The program uses Google search queries to locate the PDFs and allows the user to choose whether or not to download them.
-
-## Features
-
-- Scrapes PDF files from `.go.id`, `.kab.go.id`, and `.prov.go.id` domains.
-- Optionally downloads the PDF files.
-- Saves the scraped data (domain and PDF link) in a `results.csv` file.
-- Customizable number of search result pages to scrape.
-  
 ## Prerequisites
 
 - Go installed on your machine
@@ -93,4 +76,5 @@ If the `-d` flag is used, the PDFs will be downloaded to a directory called `dow
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License. search result pages to scrape.
+ 
